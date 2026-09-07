@@ -1,0 +1,11 @@
+{"type":"response.created"}
+{"type":"response.output_item.added","item":{"type":"message","role":"assistant","content":[]}}
+{"type":"response.output_text.delta","delta":"Weather "}
+{"type":"response.output_text.delta","delta":"ready."}
+{"type":"response.output_item.done","item":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Weather ready."}]}}
+{"type":"response.output_item.added","item":{"type":"function_call","id":"fc_1","call_id":"call_weather","name":"weather","arguments":""}}
+{"type":"response.function_call_arguments.delta","item_id":"fc_1","call_id":"call_weather","delta":"{\"city\":"}
+{"type":"response.output_item.added","item":{"type":"function_call","id":"fc_2","call_id":"call_clock","name":"clock","arguments":""}}
+{"type":"response.function_call_arguments.delta","item_id":"fc_1","call_id":"call_weather","delta":"\"Paris\"}"}
+{"type":"response.function_call_arguments.delta","item_id":"fc_2","call_id":"call_clock","delta":"{\"zone\":\"Europe/Paris\"}"}
+{"type":"response.completed","response":{"id":"resp_1","usage":{"input_tokens":100,"input_tokens_details":{"cached_tokens":40,"cache_write_tokens":10},"output_tokens":30,"output_tokens_details":{"reasoning_tokens":10},"total_tokens":130},"end_turn":false}}

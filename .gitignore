@@ -1,0 +1,13 @@
+.worktrees/
+target/
+*.log
+.DS_Store
+.env
+.env.*
+auth.json
+models-cache.json
+install-manifest.json
+session-*.json
+mcp-*.json
+backups/
+generated_images/

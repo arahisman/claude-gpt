@@ -1,0 +1,48 @@
+[package]
+name = "claude-gpt"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "MIT"
+publish = false
+
+[lib]
+name = "claude_gpt"
+path = "src/lib.rs"
+
+[[bin]]
+name = "claude-gpt"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+axum = "0.8.9"
+base64 = "0.22"
+chrono = { version = "0.4.45", default-features = false, features = ["clock"] }
+clap = { version = "4", features = ["derive"] }
+codex-api = { git = "https://github.com/openai/codex.git", rev = "985641272869835d01d025ed2a218fbbce35fa9f", package = "codex-api" }
+codex-backend-client = { git = "https://github.com/openai/codex.git", rev = "985641272869835d01d025ed2a218fbbce35fa9f", package = "codex-backend-client" }
+codex-http-client = { git = "https://github.com/openai/codex.git", rev = "985641272869835d01d025ed2a218fbbce35fa9f", package = "codex-http-client" }
+codex-login = { git = "https://github.com/openai/codex.git", rev = "985641272869835d01d025ed2a218fbbce35fa9f", package = "codex-login" }
+codex-model-provider = { git = "https://github.com/openai/codex.git", rev = "985641272869835d01d025ed2a218fbbce35fa9f", package = "codex-model-provider" }
+codex-model-provider-info = { git = "https://github.com/openai/codex.git", rev = "985641272869835d01d025ed2a218fbbce35fa9f", package = "codex-model-provider-info" }
+codex-models-manager = { git = "https://github.com/openai/codex.git", rev = "985641272869835d01d025ed2a218fbbce35fa9f", package = "codex-models-manager" }
+codex-protocol = { git = "https://github.com/openai/codex.git", rev = "985641272869835d01d025ed2a218fbbce35fa9f", package = "codex-protocol" }
+codex-utils-output-truncation = { git = "https://github.com/openai/codex.git", rev = "985641272869835d01d025ed2a218fbbce35fa9f", package = "codex-utils-output-truncation" }
+http = "1"
+futures = "0.3"
+libc = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+tempfile = "3.23.0"
+thiserror = "2.0.17"
+tokio = { version = "1", features = ["fs", "io-std", "io-util", "macros", "process", "rt-multi-thread", "signal", "sync", "time"] }
+tokio-util = { version = "0.7.19", features = ["rt"] }
+
+[dev-dependencies]
+reqwest = { version = "0.12", features = ["json", "stream"] }
+
+[patch.crates-io]
+tokio-tungstenite = { git = "https://github.com/openai-oss-forks/tokio-tungstenite", rev = "0e5b2d73aa18dd9f0a50ee9ff199d5aef7594186" }
+tungstenite = { git = "https://github.com/openai-oss-forks/tungstenite-rs", rev = "4fffad30fe373adbdcffab9545e9e9bf4f2fc19f" }
