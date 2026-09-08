@@ -22,18 +22,18 @@ fn pinned_probe() -> EnvironmentProbe {
         ),
         vscode_extension: component(
             "/tmp/extension/package.json",
-            "2.1.260",
-            "c4a73de2f43936397218e6214f6a8cfe7d4f84c0d4e05a9a66c94c9ee38f1086",
+            "2.1.263",
+            "02815d4f9d69f40501b54e2302bfee072b802a93c890bb1440bceb5108c42af2",
         ),
         vscode_claude: component(
             "/tmp/extension/resources/native-binary/claude",
-            "2.1.260",
-            "3c269f66801028823e24a63ced9fdd3988cb86cf85fccd9f03f87e463b9d3e3c",
+            "2.1.263",
+            "ef5d2909c8af49f31ab6d5487e90316777bc2fac170adfe8160716caa8aaf4f9",
         ),
         codex: component(
             "/tmp/codex",
-            "0.153.1",
-            "0cf2d42e90ddd50fa5b7eedd5d72f109b68d33e5a6ce7c3fc2c87e4180edcd59",
+            "0.153.4",
+            "a30ec314bbd0e3721632234d07db7c99855db3b9f1e32dbe8c791947f07e7629",
         ),
     }
 }
@@ -46,9 +46,9 @@ fn accepts_the_pinned_environment() {
         .expect("pinned environment is accepted");
 
     assert_eq!(verified.claude_cli.version, "2.1.258");
-    assert_eq!(verified.vscode_extension.version, "2.1.260");
-    assert_eq!(verified.vscode_claude.version, "2.1.260");
-    assert_eq!(verified.codex.version, "0.153.1");
+    assert_eq!(verified.vscode_extension.version, "2.1.263");
+    assert_eq!(verified.vscode_claude.version, "2.1.263");
+    assert_eq!(verified.codex.version, "0.153.4");
 }
 
 #[test]
@@ -110,7 +110,7 @@ fn resolves_all_user_paths_from_one_home_directory() {
     assert_eq!(
         paths.vscode_claude,
         PathBuf::from(
-            "/Users/tester/.vscode/extensions/anthropic.claude-code-2.1.260-darwin-arm64/resources/native-binary/claude"
+            "/Users/tester/.vscode/extensions/anthropic.claude-code-2.1.263-darwin-arm64/resources/native-binary/claude"
         )
     );
     assert_eq!(

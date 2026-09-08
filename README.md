@@ -41,8 +41,8 @@ VS Code использует настройку `claudeCode.claudeProcessWrapper
 |---|---|
 | Платформа | macOS arm64 |
 | Claude Code CLI | 2.1.258 |
-| Claude Code for VS Code и embedded CLI | 2.1.260 |
-| Codex | 0.153.1 |
+| Claude Code for VS Code и embedded CLI | 2.1.263 |
+| Codex | 0.153.4 |
 | Rust | 1.95.0 |
 | Исходники Codex | `985641272869835d01d025ed2a218fbbce35fa9f` |
 
@@ -52,7 +52,7 @@ VS Code использует настройку `claudeCode.claudeProcessWrapper
 
 ```text
 ~/.local/share/claude/versions/2.1.258
-~/.vscode/extensions/anthropic.claude-code-2.1.260-darwin-arm64/
+~/.vscode/extensions/anthropic.claude-code-2.1.263-darwin-arm64/
 /Applications/ChatGPT.app/Contents/Resources/codex
 ~/.codex/
 ~/Library/Application Support/Code/User/settings.json

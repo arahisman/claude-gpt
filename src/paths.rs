@@ -32,7 +32,7 @@ impl AppPaths {
 
     pub fn for_home(home: PathBuf) -> Self {
         let vscode_extension =
-            home.join(".vscode/extensions/anthropic.claude-code-2.1.260-darwin-arm64");
+            home.join(".vscode/extensions/anthropic.claude-code-2.1.263-darwin-arm64");
         let state_dir = home.join("Library/Application Support/claude-gpt");
         Self {
             claude_cli: home.join(".local/share/claude/versions/2.1.258"),
