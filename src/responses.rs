@@ -77,13 +77,16 @@ pub fn estimate_request_tokens(request: &AnthropicRequest) -> usize {
             tokens = tokens.saturating_add(match block {
                 ContentBlock::Text { text } => approx_token_count(text),
                 ContentBlock::Image { .. } => IMAGE_TOKEN_ESTIMATE,
+                ContentBlock::Document { source, .. } => estimate_document_tokens(source),
                 ContentBlock::ToolUse { name, input, .. } => approx_token_count(name)
                     .saturating_add(approx_token_count(&input.to_string()))
                     .saturating_add(16),
                 ContentBlock::ToolResult { content, .. } => {
                     estimate_tool_result_tokens(content).saturating_add(16)
                 }
-                ContentBlock::Thinking { .. } | ContentBlock::RedactedThinking { .. } => 0,
+                ContentBlock::Thinking { .. }
+                | ContentBlock::RedactedThinking { .. }
+                | ContentBlock::Fallback => 0,
             });
         }
     }
@@ -136,6 +139,15 @@ fn convert_message(
                     "image_url": image_url(source)
                 }));
             }
+            ContentBlock::Document { title, source } => {
+                if message.role != "user" {
+                    return invalid_request(path, "documents are only valid in user messages");
+                }
+                message_content.push(json!({
+                    "type": "input_text",
+                    "text": document_text(title, source, &path)?
+                }));
+            }
             ContentBlock::ToolUse {
                 id,
                 name,
@@ -186,6 +198,9 @@ fn convert_message(
                 }
             }
             ContentBlock::RedactedThinking { .. } => {
+                flush_message(responses_role, &mut message_content, input);
+            }
+            ContentBlock::Fallback => {
                 flush_message(responses_role, &mut message_content, input);
             }
         }
@@ -269,6 +284,38 @@ fn image_url(source: &ImageSource) -> String {
         }
         ImageSource::Url { url } => url.clone(),
     }
+}
+
+fn estimate_document_tokens(source: &ImageSource) -> usize {
+    match source {
+        ImageSource::Base64 { data, .. } => data.len().saturating_mul(3) / 16,
+        ImageSource::Url { url } => approx_token_count(url),
+    }
+}
+
+fn document_text(title: &str, source: &ImageSource, path: &str) -> Result<String> {
+    let ImageSource::Base64 { media_type, data } = source else {
+        return invalid_request(path, "document source must use base64 data");
+    };
+    if media_type != "text/plain" {
+        return invalid_request(
+            format!("{path}.source.media_type"),
+            format!("unsupported document media type `{media_type}`"),
+        );
+    }
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(data)
+        .map_err(|error| BridgeError::InvalidRequest {
+            path: format!("{path}.source.data"),
+            message: format!("document base64 is invalid: {error}"),
+        })?;
+    let text = String::from_utf8(bytes).map_err(|error| BridgeError::InvalidRequest {
+        path: format!("{path}.source.data"),
+        message: format!("document text is not UTF-8: {error}"),
+    })?;
+    Ok(format!(
+        "Attached document `{title}` ({media_type}):\n{text}"
+    ))
 }
 
 fn convert_tool_result(content: &Value, path: &str) -> Result<Value> {

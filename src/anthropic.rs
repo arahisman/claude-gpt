@@ -36,6 +36,10 @@ pub enum ContentBlock {
     Image {
         source: ImageSource,
     },
+    Document {
+        title: String,
+        source: ImageSource,
+    },
     ToolUse {
         id: String,
         name: String,
@@ -55,6 +59,7 @@ pub enum ContentBlock {
     RedactedThinking {
         data: String,
     },
+    Fallback,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

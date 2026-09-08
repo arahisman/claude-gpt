@@ -174,6 +174,60 @@ fn converts_read_image_tool_results_to_responses_input_images() {
 }
 
 #[test]
+fn preserves_plaintext_documents_and_ignores_model_fallback_history() {
+    let request: AnthropicRequest = serde_json::from_value(json!({
+        "model": "claude-gpt-openai::gpt-5.6-sol::872000",
+        "max_tokens": 1024,
+        "messages": [
+            {
+                "role": "assistant",
+                "content": [{
+                    "type": "fallback",
+                    "from": {"model": "claude-sonnet-5"},
+                    "to": {"model": "claude-gpt-openai::gpt-5.6-sol::872000"}
+                }]
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "document",
+                        "title": "notes.txt",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "text/plain",
+                            "data": "cHJlc2VydmUgdGhpcyBkb2N1bWVudA=="
+                        }
+                    },
+                    {"type": "text", "text": "Answer from the document."}
+                ]
+            }
+        ]
+    }))
+    .expect("new Claude Code history is parsed");
+
+    let actual = convert_request(&request, &variant(872_000, 828_400, true), ultra())
+        .expect("convert resumed history");
+
+    assert_eq!(
+        actual["input"],
+        json!([
+            {
+                "type": "message",
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": "Attached document `notes.txt` (text/plain):\npreserve this document"
+                    },
+                    {"type": "input_text", "text": "Answer from the document."}
+                ]
+            }
+        ])
+    );
+}
+
+#[test]
 fn rejects_images_for_a_text_only_model() {
     let request: AnthropicRequest =
         serde_json::from_str(include_str!("fixtures/anthropic_mixed_request.json"))
