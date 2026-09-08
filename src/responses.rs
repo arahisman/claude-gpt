@@ -5,7 +5,8 @@ use codex_utils_output_truncation::approx_token_count;
 use serde_json::{Value, json};
 
 use crate::anthropic::{
-    AnthropicRequest, ContentBlock, ImageSource, Message, ToolChoice, ToolDefinition,
+    AnthropicRequest, ContentBlock, DocumentSource, ImageSource, Message, ToolChoice,
+    ToolDefinition,
 };
 use crate::catalog::ModelVariant;
 use crate::effort::{EffortResolution, wire_effort};
@@ -286,16 +287,33 @@ fn image_url(source: &ImageSource) -> String {
     }
 }
 
-fn estimate_document_tokens(source: &ImageSource) -> usize {
+fn estimate_document_tokens(source: &DocumentSource) -> usize {
     match source {
-        ImageSource::Base64 { data, .. } => data.len().saturating_mul(3) / 16,
-        ImageSource::Url { url } => approx_token_count(url),
+        DocumentSource::Base64 { data, .. } => data.len().saturating_mul(3) / 16,
+        DocumentSource::Text { data, .. } => approx_token_count(data),
+        DocumentSource::Url { url } => approx_token_count(url),
     }
 }
 
-fn document_text(title: &str, source: &ImageSource, path: &str) -> Result<String> {
-    let ImageSource::Base64 { media_type, data } = source else {
-        return invalid_request(path, "document source must use base64 data");
+fn document_text(title: &str, source: &DocumentSource, path: &str) -> Result<String> {
+    let (media_type, text) = match source {
+        DocumentSource::Base64 { media_type, data } => {
+            let bytes = base64::engine::general_purpose::STANDARD
+                .decode(data)
+                .map_err(|error| BridgeError::InvalidRequest {
+                    path: format!("{path}.source.data"),
+                    message: format!("document base64 is invalid: {error}"),
+                })?;
+            let text = String::from_utf8(bytes).map_err(|error| BridgeError::InvalidRequest {
+                path: format!("{path}.source.data"),
+                message: format!("document text is not UTF-8: {error}"),
+            })?;
+            (media_type, text)
+        }
+        DocumentSource::Text { media_type, data } => (media_type, data.clone()),
+        DocumentSource::Url { .. } => {
+            return invalid_request(path, "document source must use inline text or base64 data");
+        }
     };
     if media_type != "text/plain" {
         return invalid_request(
@@ -303,16 +321,6 @@ fn document_text(title: &str, source: &ImageSource, path: &str) -> Result<String
             format!("unsupported document media type `{media_type}`"),
         );
     }
-    let bytes = base64::engine::general_purpose::STANDARD
-        .decode(data)
-        .map_err(|error| BridgeError::InvalidRequest {
-            path: format!("{path}.source.data"),
-            message: format!("document base64 is invalid: {error}"),
-        })?;
-    let text = String::from_utf8(bytes).map_err(|error| BridgeError::InvalidRequest {
-        path: format!("{path}.source.data"),
-        message: format!("document text is not UTF-8: {error}"),
-    })?;
     Ok(format!(
         "Attached document `{title}` ({media_type}):\n{text}"
     ))

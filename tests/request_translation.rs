@@ -228,6 +228,42 @@ fn preserves_plaintext_documents_and_ignores_model_fallback_history() {
 }
 
 #[test]
+fn preserves_claude_code_text_source_documents() {
+    let request: AnthropicRequest = serde_json::from_value(json!({
+        "model": "claude-gpt-openai::gpt-5.6-sol::872000",
+        "max_tokens": 1024,
+        "messages": [{
+            "role": "user",
+            "content": [{
+                "type": "document",
+                "title": "notes.txt",
+                "source": {
+                    "type": "text",
+                    "media_type": "text/plain",
+                    "data": "preserve this document"
+                }
+            }]
+        }]
+    }))
+    .expect("Claude Code text-source document is parsed");
+
+    let actual = convert_request(&request, &variant(872_000, 828_400, true), ultra())
+        .expect("convert text-source document");
+
+    assert_eq!(
+        actual["input"],
+        json!([{
+            "type": "message",
+            "role": "user",
+            "content": [{
+                "type": "input_text",
+                "text": "Attached document `notes.txt` (text/plain):\npreserve this document"
+            }]
+        }])
+    );
+}
+
+#[test]
 fn rejects_images_for_a_text_only_model() {
     let request: AnthropicRequest =
         serde_json::from_str(include_str!("fixtures/anthropic_mixed_request.json"))

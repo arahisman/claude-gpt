@@ -38,7 +38,7 @@ pub enum ContentBlock {
     },
     Document {
         title: String,
-        source: ImageSource,
+        source: DocumentSource,
     },
     ToolUse {
         id: String,
@@ -66,6 +66,14 @@ pub enum ContentBlock {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ImageSource {
     Base64 { media_type: String, data: String },
+    Url { url: String },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum DocumentSource {
+    Base64 { media_type: String, data: String },
+    Text { media_type: String, data: String },
     Url { url: String },
 }
 
