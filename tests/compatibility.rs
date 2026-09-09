@@ -33,7 +33,7 @@ fn pinned_probe() -> EnvironmentProbe {
         codex: component(
             "/tmp/codex",
             "0.153.4",
-            "a30ec314bbd0e3721632234d07db7c99855db3b9f1e32dbe8c791947f07e7629",
+            "c147aa90d34139599711fb568102ceefc6319ca1ac5cb6f4056ca46a1834edd9",
         ),
     }
 }
