@@ -29,6 +29,7 @@ use crate::paths::AppPaths;
 use crate::usage::{UsageCache, UsageSnapshot};
 
 const CHATGPT_BASE_URL: &str = "https://chatgpt.com/backend-api/";
+const IMAGE_MODEL: &str = "gpt-image-2.5-sunburst";
 const USAGE_CACHE_TTL: Duration = Duration::from_secs(60);
 
 pub struct CodexTransport {
@@ -287,7 +288,7 @@ fn image_request(prompt: String, referenced_image_paths: Vec<PathBuf>) -> Result
         return Ok(ImageRequest::Generate(ImageGenerationRequest {
             prompt,
             background: Some(ImageBackground::Auto),
-            model: "gpt-image-2".to_string(),
+            model: IMAGE_MODEL.to_string(),
             n: None,
             quality: Some(ImageQuality::Auto),
             size: Some("auto".to_string()),
@@ -307,7 +308,7 @@ fn image_request(prompt: String, referenced_image_paths: Vec<PathBuf>) -> Result
         images,
         prompt,
         background: Some(ImageBackground::Auto),
-        model: "gpt-image-2".to_string(),
+        model: IMAGE_MODEL.to_string(),
         n: None,
         quality: Some(ImageQuality::Auto),
         size: Some("auto".to_string()),
@@ -371,6 +372,33 @@ fn api_error_status(error: &ApiError) -> Option<StatusCode> {
             Some(*status)
         }
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ImageRequest, image_request};
+
+    #[test]
+    fn image_requests_use_sunburst_for_generation_and_editing() {
+        let generated = image_request("a paper airplane".to_string(), vec![]).unwrap();
+        let temporary_directory = tempfile::tempdir().unwrap();
+        let reference = temporary_directory.path().join("reference.png");
+        std::fs::write(&reference, b"png").unwrap();
+        let edited = image_request("make it red".to_string(), vec![reference]).unwrap();
+
+        match generated {
+            ImageRequest::Generate(request) => {
+                assert_eq!(request.model, "gpt-image-2.5-sunburst");
+            }
+            ImageRequest::Edit(_) => panic!("expected a generation request"),
+        }
+        match edited {
+            ImageRequest::Edit(request) => {
+                assert_eq!(request.model, "gpt-image-2.5-sunburst");
+            }
+            ImageRequest::Generate(_) => panic!("expected an edit request"),
+        }
     }
 }
 
