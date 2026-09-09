@@ -9,7 +9,19 @@ use claude_gpt::paths::AppPaths;
 fn fixture() -> (tempfile::TempDir, AppPaths, PathBuf) {
     let directory = tempfile::tempdir().unwrap();
     let home = directory.path().join("home");
-    let paths = AppPaths::for_home(home);
+    let claude = home.join(".local/bin/claude");
+    fs::create_dir_all(claude.parent().unwrap()).unwrap();
+    fs::write(&claude, b"fixture claude").unwrap();
+    fs::set_permissions(&claude, fs::Permissions::from_mode(0o755)).unwrap();
+    let extension = home.join(".vscode/extensions/anthropic.claude-code-9.9.9-darwin-arm64");
+    fs::create_dir_all(extension.join("resources/native-binary")).unwrap();
+    fs::write(extension.join("package.json"), "{\"version\":\"9.9.9\"}").unwrap();
+    fs::write(
+        extension.join("resources/native-binary/claude"),
+        b"fixture claude",
+    )
+    .unwrap();
+    let paths = AppPaths::for_home(home).unwrap();
     fs::create_dir_all(paths.vscode_settings.parent().unwrap()).unwrap();
     fs::write(
         &paths.vscode_settings,

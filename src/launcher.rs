@@ -47,11 +47,8 @@ pub async fn run(args: Vec<OsString>) -> Result<ExitStatus> {
     let catalog = std::sync::Arc::new(catalog);
     let gateway =
         Gateway::bind(SessionState::with_random_token(transport, catalog.clone())?).await?;
-    let (claude_cli, args) = select_claude_invocation(
-        &verified.claude_cli.path,
-        &verified.vscode_claude.path,
-        args,
-    );
+    let (claude_cli, args) =
+        select_claude_invocation(&verified.claude_cli, &verified.vscode_claude, args);
     launch_with_gateway(&claude_cli, args, &catalog, &paths.state_dir, gateway, &[]).await
 }
 

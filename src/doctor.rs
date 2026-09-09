@@ -45,16 +45,16 @@ impl std::fmt::Display for DoctorReport {
 
 pub async fn run(paths: &AppPaths, mode: DoctorMode) -> Result<DoctorReport> {
     let verified = Compatibility::embedded()?.verify(paths)?;
-    let help = command_stdout(&verified.claude_cli.path, &["--help"])?;
+    let help = command_stdout(&verified.claude_cli, &["--help"])?;
     check_claude_help(&help)?;
     let package_bytes =
-        std::fs::read(&verified.vscode_extension.path).map_err(|source| BridgeError::Read {
-            path: verified.vscode_extension.path.clone(),
+        std::fs::read(&verified.vscode_package_json).map_err(|source| BridgeError::Read {
+            path: verified.vscode_package_json.clone(),
             source,
         })?;
     let package: Value =
         serde_json::from_slice(&package_bytes).map_err(|source| BridgeError::ParseJson {
-            path: verified.vscode_extension.path.clone(),
+            path: verified.vscode_package_json.clone(),
             source,
         })?;
     check_extension_schema(&package)?;
@@ -67,12 +67,15 @@ pub async fn run(paths: &AppPaths, mode: DoctorMode) -> Result<DoctorReport> {
     let transport = CodexTransport::connect(paths).await?;
     let catalog = transport.refresh_catalog().await?;
     let mut checks = vec![
-        format!("Claude CLI {}", verified.claude_cli.version),
-        format!("VS Code extension {}", verified.vscode_extension.version),
-        format!("VS Code embedded Claude {}", verified.vscode_claude.version),
+        format!("Claude CLI at {}", verified.claude_cli.display()),
+        format!("VS Code extension at {}", paths.vscode_extension.display()),
         format!(
-            "Codex {} with ChatGPT authentication",
-            verified.codex.version
+            "VS Code embedded Claude at {}",
+            verified.vscode_claude.display()
+        ),
+        format!(
+            "Codex with ChatGPT authentication at {}",
+            verified.codex.display()
         ),
         "loopback gateway bind".to_string(),
         format!("{} GPT model variants discovered", catalog.visible().len()),

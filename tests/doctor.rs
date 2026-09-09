@@ -12,7 +12,7 @@ fn offline_doctor_never_plans_an_inference_call() {
 }
 
 #[test]
-fn validates_the_pinned_claude_and_extension_contracts() {
+fn validates_the_current_claude_and_extension_contracts() {
     let help = "--settings <file-or-json> --continue --resume --effort <level> (low, medium, high, xhigh, max)";
     assert!(check_claude_help(help).is_ok());
     assert!(check_claude_help("--settings").is_err());

@@ -314,10 +314,8 @@ async fn messages<T: GatewayTransport>(
             Ok(snapshot) => render_usage(&snapshot),
             Err(_) => "Codex subscription usage is temporarily unavailable.".to_string(),
         }
-    } else if let Some(usage_output) = extract_usage_command_output(&request) {
-        usage_output
     } else {
-        String::new()
+        extract_usage_command_output(&request).unwrap_or_default()
     };
     if !usage_output.is_empty() {
         let rate_limits = state.transport.rate_limits().await;
