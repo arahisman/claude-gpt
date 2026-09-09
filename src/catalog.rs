@@ -82,6 +82,7 @@ impl Catalog {
                 variant.gateway_id == gateway_id
                     || variant.gateway_id.strip_suffix("[1m]") == Some(gateway_id)
             })
+            .or_else(|| self.resolve_claude_agent_alias(gateway_id))
             .ok_or_else(|| BridgeError::UnknownModel(gateway_id.to_string()))
     }
 
@@ -107,6 +108,34 @@ impl Catalog {
             })
             .max_by_key(|candidate| candidate.usable_tokens)
             .unwrap_or(selected))
+    }
+
+    fn resolve_claude_agent_alias(&self, model: &str) -> Option<&ModelVariant> {
+        if !model.starts_with("claude-") || model.starts_with("claude-gpt-openai::") {
+            return None;
+        }
+
+        let preferred_slug =
+            if model.starts_with("claude-haiku-") || model.starts_with("claude-fable-") {
+                "gpt-5.6-luna"
+            } else {
+                "gpt-5.6-terra"
+            };
+
+        self.preferred_variant(preferred_slug)
+            .or_else(|| self.preferred_variant("gpt-5.6-terra"))
+            .or_else(|| self.variants.first())
+    }
+
+    fn preferred_variant(&self, slug: &str) -> Option<&ModelVariant> {
+        self.variants
+            .iter()
+            .find(|variant| variant.model_slug == slug && variant.extended)
+            .or_else(|| {
+                self.variants
+                    .iter()
+                    .find(|variant| variant.model_slug == slug)
+            })
     }
 }
 

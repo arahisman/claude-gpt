@@ -8,6 +8,21 @@ fn fixture_catalog() -> Catalog {
     Catalog::from_codex(response.models).expect("compatible GPT catalog")
 }
 
+fn fixture_catalog_with_luna() -> Catalog {
+    let mut response: ModelsResponse =
+        serde_json::from_str(include_str!("fixtures/models.json")).expect("valid Codex fixture");
+    let mut luna = response
+        .models
+        .iter()
+        .find(|model| model.slug == "gpt-5.6-terra")
+        .cloned()
+        .expect("Terra fixture");
+    luna.slug = "gpt-5.6-luna".to_string();
+    luna.display_name = "GPT-5.6-Luna".to_string();
+    response.models.push(luna);
+    Catalog::from_codex(response.models).expect("compatible GPT catalog")
+}
+
 #[test]
 fn creates_standard_and_extended_variants_and_prefers_extended_terra() {
     let catalog = fixture_catalog();
@@ -89,6 +104,27 @@ fn resolves_stable_gateway_ids_without_model_substitution() {
             .resolve("claude-gpt-openai::missing::272000")
             .is_err()
     );
+}
+
+#[test]
+fn maps_claude_agent_aliases_to_safe_gpt_models() {
+    let catalog = fixture_catalog_with_luna();
+
+    for alias in ["claude-haiku-4-5-20251001", "claude-fable-5"] {
+        let model = catalog.resolve(alias).expect("lightweight agent alias");
+        assert_eq!(model.model_slug, "gpt-5.6-luna");
+        assert!(model.extended);
+    }
+
+    for alias in [
+        "claude-sonnet-4-6",
+        "claude-opus-4-8",
+        "claude-future-agent",
+    ] {
+        let model = catalog.resolve(alias).expect("general-purpose agent alias");
+        assert_eq!(model.model_slug, "gpt-5.6-terra");
+        assert!(model.extended);
+    }
 }
 
 #[test]
