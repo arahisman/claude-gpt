@@ -13,7 +13,8 @@ use crate::error::{BridgeError, Result};
 use crate::paths::AppPaths;
 
 const SERVER_NAME: &str = "claude-gpt-imagegen";
-const TOOL_NAME: &str = "imagegen";
+const IMAGEGEN_TOOL_NAME: &str = "imagegen";
+const IMAGEEDIT_TOOL_NAME: &str = "imageedit";
 const MAX_REFERENCE_IMAGES: usize = 5;
 
 pub trait ImageGenerator: Send + Sync {
@@ -93,18 +94,37 @@ where
         let Some(params) = params else {
             return failure(id, -32602, "tools/call requires params");
         };
-        if params.get("name").and_then(Value::as_str) != Some(TOOL_NAME) {
-            return tool_failure(id, "unknown tool");
-        }
+        let tool_name = match params.get("name").and_then(Value::as_str) {
+            Some(IMAGEGEN_TOOL_NAME) => IMAGEGEN_TOOL_NAME,
+            Some(IMAGEEDIT_TOOL_NAME) => IMAGEEDIT_TOOL_NAME,
+            _ => return tool_failure(id, "unknown tool"),
+        };
         let arguments = params.get("arguments").unwrap_or(&Value::Null);
         let prompt = match arguments.get("prompt").and_then(Value::as_str) {
             Some(prompt) if !prompt.trim().is_empty() => prompt.to_string(),
-            _ => return failure(id, -32602, "imagegen requires a non-empty prompt"),
+            _ => return failure(id, -32602, "image generation requires a non-empty prompt"),
         };
         let reference_paths = match reference_paths(arguments, &self.project_dir) {
             Ok(paths) => paths,
             Err(error) => return failure(id, -32602, &error),
         };
+        match tool_name {
+            IMAGEGEN_TOOL_NAME if !reference_paths.is_empty() => {
+                return failure(
+                    id,
+                    -32602,
+                    "imagegen does not accept reference images; use imageedit instead",
+                );
+            }
+            IMAGEEDIT_TOOL_NAME if reference_paths.is_empty() => {
+                return failure(
+                    id,
+                    -32602,
+                    "imageedit requires at least one reference image",
+                );
+            }
+            _ => {}
+        }
         match self
             .image_generator
             .generate_image(prompt, reference_paths)
@@ -206,19 +226,33 @@ impl ImageGenerator for LazyImageGenerator {
 
 fn tools_list() -> Value {
     json!({
-        "tools": [{
-            "name": TOOL_NAME,
-            "description": "Generate or edit a PNG image through the ChatGPT Codex subscription. Returns only the saved local path.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "prompt": {"type": "string", "description": "Image-generation or editing instruction."},
-                    "referenced_image_paths": {"type": "array", "maxItems": MAX_REFERENCE_IMAGES, "items": {"type": "string"}}
-                },
-                "required": ["prompt"],
-                "additionalProperties": false
+        "tools": [
+            {
+                "name": IMAGEGEN_TOOL_NAME,
+                "description": "Create a new PNG image from a text prompt through the ChatGPT Codex subscription. Returns only the saved local path.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "prompt": {"type": "string", "description": "Text-to-image instruction."}
+                    },
+                    "required": ["prompt"],
+                    "additionalProperties": false
+                }
+            },
+            {
+                "name": IMAGEEDIT_TOOL_NAME,
+                "description": "Create a new PNG image from one or more reference images and a text instruction. Never overwrites the reference images. Returns only the saved local path.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "prompt": {"type": "string", "description": "Image editing instruction."},
+                        "referenced_image_paths": {"type": "array", "minItems": 1, "maxItems": MAX_REFERENCE_IMAGES, "items": {"type": "string"}}
+                    },
+                    "required": ["prompt", "referenced_image_paths"],
+                    "additionalProperties": false
+                }
             }
-        }]
+        ]
     })
 }
 
